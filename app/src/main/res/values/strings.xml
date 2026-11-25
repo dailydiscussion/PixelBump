@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">PixelBump</string>
+    <string name="hce_service_desc">PixelBump Proximity Share Service</string>
+    <string name="aid_group_desc">NFC Forum Type 4 Tag Emulation</string>
+</resources>

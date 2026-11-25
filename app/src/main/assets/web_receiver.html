@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>PixelBump — AirDrop Web Bridge</title>
+  <style>
+    :root {
+      --bg: #050508;
+      --card-bg: rgba(255, 255, 255, 0.08);
+      --card-border: rgba(255, 255, 255, 0.16);
+      --text-primary: #FFFFFF;
+      --text-secondary: rgba(255, 255, 255, 0.55);
+      --accent-blue: #0A84FF;
+      --accent-green: #30D158;
+      --accent-red: #FF453A;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+      letter-spacing: -0.01em;
+    }
+
+    .mesh-gradient-1 {
+      position: fixed;
+      top: 10%;
+      left: 10%;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(10, 132, 255, 0.25) 0%, rgba(191, 90, 242, 0.15) 45%, rgba(0,0,0,0) 70%);
+      filter: blur(70px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .mesh-gradient-2 {
+      position: fixed;
+      bottom: 10%;
+      right: 10%;
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(255, 55, 95, 0.2) 0%, rgba(10, 132, 255, 0.15) 40%, rgba(0,0,0,0) 70%);
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .modal-card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 356px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%);
+      border: 1px solid var(--card-border);
+      border-radius: 36px;
+      padding: 26px 22px 22px;
+      backdrop-filter: blur(48px) saturate(190%);
+      -webkit-backdrop-filter: blur(48px) saturate(190%);
+      box-shadow: 
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4),
+        0 30px 60px rgba(0, 0, 0, 0.7);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: spring-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes spring-in {
+      from { opacity: 0; transform: scale(0.88) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .device-icon-ring {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.25), 0 8px 16px rgba(0,0,0,0.3);
+      font-size: 24px;
+    }
+
+    .device-icon-ring svg {
+      width: 26px;
+      height: 26px;
+      fill: var(--text-primary);
+    }
+
+    .sender-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      margin-bottom: 3px;
+    }
+
+    .sender-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .preview-box {
+      width: 100%;
+      height: 170px;
+      border-radius: 22px;
+      background: rgba(12, 13, 18, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 16px;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+    }
+
+    .preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-box .generic-file-icon {
+      font-size: 44px;
+      opacity: 0.9;
+    }
+
+    .meta-tag {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 12px;
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .meta-tag .fname {
+      max-width: 185px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    .meta-tag .fsize {
+      color: var(--text-secondary);
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    .drop-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 26px 16px;
+      border-radius: 22px;
+      border: 1.5px dashed rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      margin-bottom: 16px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .drop-zone:active {
+      background: rgba(10, 132, 255, 0.14);
+      border-color: var(--accent-blue);
+    }
+
+    .drop-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(10, 132, 255, 0.2);
+      border: 1px solid rgba(10, 132, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    .drop-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .drop-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .file-list-box {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 18px;
+      padding: 12px;
+      margin-bottom: 16px;
+      text-align: left;
+      max-height: 170px;
+      overflow-y: auto;
+    }
+
+    .file-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 11px;
+      font-weight: 700;
+      color: #64D2FF;
+    }
+
+    .clear-link {
+      color: var(--text-secondary);
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .file-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      padding: 4px 0;
+      gap: 8px;
+    }
+
+    .file-row-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .file-row-size {
+      color: var(--text-secondary);
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    .progress-container {
+      width: 100%;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #0A84FF, #5AC8FA);
+      border-radius: 999px;
+      transition: width 0.15s ease-out;
+    }
+
+    .progress-stats {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 18px;
+      padding: 14px 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-decline {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-accept {
+      background: var(--accent-blue);
+      color: #FFFFFF;
+      box-shadow: 0 4px 16px rgba(10, 132, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-single {
+      grid-column: span 2;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      margin-bottom: 12px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-green);
+    }
+
+    .mode-switch-link {
+      margin-top: 14px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.48);
+      cursor: pointer;
+    }
+
+    .mode-switch-link span {
+      color: #5AC8FA;
+      font-weight: 600;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.35);
+      text-align: center;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="mesh-gradient-1"></div>
+  <div class="mesh-gradient-2"></div>
+
+  <!-- ========================================================= -->
+  <!-- CARD A: RECEIVE FROM PIXEL (Pixel -> Apple)               -->
+  <!-- ========================================================= -->
+  <div class="modal-card" id="download-card">
+    <div class="status-pill">
+      <span class="status-dot"></span>
+      <span id="status-text">Direct Link Active</span>
+    </div>
+
+    <div class="device-icon-ring">
+      <svg viewBox="0 0 24 24">
+        <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14zm-4.5 1.5h-1c-.28 0-.5-.22-.5-.5s.22-.5.5-.5h1c.28 0 .5.22.5.5s-.22.5-.5.5z"/>
+      </svg>
+    </div>
+
+    <h2 class="sender-title" id="sender-device">"Google Pixel 6a"</h2>
+    <p class="sender-subtitle" id="transfer-summary">would like to share a file</p>
+
+    <div class="preview-box">
+      <div id="generic-preview" class="generic-file-icon">📦</div>
+      <img id="image-preview" style="display:none;" alt="Preview" />
+      <div class="meta-tag">
+        <span class="fname" id="file-name">Connecting...</span>
+        <span class="fsize" id="file-size">-- MB</span>
+      </div>
+    </div>
+
+    <div class="progress-container" id="progress-container">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+      </div>
+      <div class="progress-stats">
+        <span id="speed-indicator">0.0 MB/s</span>
+        <span id="percent-indicator">0%</span>
+      </div>
+    </div>
+
+    <div class="action-grid" id="action-grid">
+      <button class="btn btn-decline" id="btn-decline" onclick="handleDecline()">Decline</button>
+      <button class="btn btn-accept" id="btn-accept" onclick="startTransfer()">Accept</button>
+    </div>
+
+    <p class="mode-switch-link" onclick="switchBridgeMode('upload')">
+      Want to send files back? <span>Send to Pixel &rarr;</span>
+    </p>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- CARD B: SEND TO PIXEL (Apple -> Pixel Drop Box)           -->
+  <!-- ========================================================= -->
+  <div class="modal-card hidden" id="upload-card">
+    <div class="status-pill">
+      <span class="status-dot" style="background:#5AC8FA;"></span>
+      <span id="upload-status-text">Pixel Drop Box Ready</span>
+    </div>
+
+    <div class="device-icon-ring">📲</div>
+
+    <h2 class="sender-title">Send to "Google Pixel 6a"</h2>
+    <p class="sender-subtitle">Full original quality &bull; Direct local Wi-Fi</p>
+
+    <!-- Native iOS Photos & Files Picker via label -->
+    <input type="file" id="apple-file-input" multiple style="display:none;" onchange="handleFilesChosen(this.files)">
+    <label for="apple-file-input" class="drop-zone" id="upload-drop-zone">
+      <div class="drop-icon">➕</div>
+      <div class="drop-title">Select Photos, Videos, or Files</div>
+      <div class="drop-sub">Opens Apple Photo Library &amp; Files</div>
+    </label>
+
+    <div class="file-list-box hidden" id="upload-file-list-box">
+      <div class="file-list-header">
+        <span id="upload-summary-header">0 Files Selected</span>
+        <span class="clear-link" onclick="clearSelectedUploadFiles()">Clear</span>
+      </div>
+      <div id="upload-file-rows"></div>
+    </div>
+
+    <div class="progress-container" id="upload-progress-container">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="upload-progress-fill" style="background: linear-gradient(90deg, #0A84FF, #30D158);"></div>
+      </div>
+      <div class="progress-stats">
+        <span id="upload-speed-indicator">0.0 MB/s</span>
+        <span id="upload-percent-indicator">0%</span>
+      </div>
+    </div>
+
+    <button class="btn btn-accept" id="btn-send-to-pixel" disabled onclick="startUploadToPixel()">
+      Select Files Above to Send
+    </button>
+
+    <p class="mode-switch-link" onclick="switchBridgeMode('download')">
+      Receiving a file? <span>&larr; Switch to Receive</span>
+    </p>
+  </div>
+
+  <p class="footer-note">PixelBump &bull; Two-Way Zero-Install Sharing</p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    let bridgeMode = params.get('mode') === 'upload' ? 'upload' : 'download';
+    let sessionToken = params.get('token') || 'demo';
+    let declaredName = params.get('name') || 'Shared_File';
+    let declaredSize = parseInt(params.get('size') || '0', 10);
+    let declaredType = params.get('type') || 'application/octet-stream';
+    let declaredSender = params.get('sender') || 'Google Pixel 6a';
+
+    // Download UI Elements
+    const downloadCard = document.getElementById('download-card');
+    const uploadCard = document.getElementById('upload-card');
+    const senderElem = document.getElementById('sender-device');
+    const summaryElem = document.getElementById('transfer-summary');
+    const fileNameElem = document.getElementById('file-name');
+    const fileSizeElem = document.getElementById('file-size');
+    const genericPreview = document.getElementById('generic-preview');
+    const imgPreview = document.getElementById('image-preview');
+    const progressContainer = document.getElementById('progress-container');
+    const progressFill = document.getElementById('progress-bar-fill');
+    const speedIndicator = document.getElementById('speed-indicator');
+    const percentIndicator = document.getElementById('percent-indicator');
+    const btnAccept = document.getElementById('btn-accept');
+    const btnDecline = document.getElementById('btn-decline');
+    const statusText = document.getElementById('status-text');
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes <= 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+    }
+
+    function detectAppleDevice() {
+      const ua = navigator.userAgent || '';
+      if (/iPad/i.test(ua)) return 'Apple iPad';
+      if (/iPhone/i.test(ua)) return 'Apple iPhone';
+      if (/Macintosh/i.test(ua) && 'ontouchend' in document) return 'Apple iPad';
+      if (/Macintosh/i.test(ua)) return 'Mac';
+      return 'Apple Device';
+    }
+
+    function switchBridgeMode(mode) {
+      bridgeMode = mode;
+      if (mode === 'upload') {
+        downloadCard.classList.add('hidden');
+        uploadCard.classList.remove('hidden');
+      } else {
+        uploadCard.classList.add('hidden');
+        downloadCard.classList.remove('hidden');
+      }
+    }
+
+    function applyMetadata() {
+      senderElem.innerText = `"${declaredSender}"`;
+      fileNameElem.innerText = declaredName;
+      if (declaredSize > 0) {
+        fileSizeElem.innerText = formatBytes(declaredSize);
+        summaryElem.innerText = `would like to share 1 file (${formatBytes(declaredSize)})`;
+      }
+      if (declaredType.startsWith('image/')) {
+        genericPreview.innerText = '🖼️';
+      } else if (declaredType.startsWith('video/')) {
+        genericPreview.innerText = '🎥';
+      } else if (declaredType.startsWith('audio/')) {
+        genericPreview.innerText = '🎵';
+      } else if (declaredType.includes('pdf')) {
+        genericPreview.innerText = '📄';
+      } else {
+        genericPreview.innerText = '📦';
+      }
+    }
+
+    // Apply initial mode & metadata
+    switchBridgeMode(bridgeMode);
+    applyMetadata();
+
+    // Fetch live metadata/mode from Pixel server
+    fetch('/meta')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data) return;
+        if (!params.has('mode') && data.mode === 'upload') {
+          switchBridgeMode('upload');
+        }
+        if (data.name && (!params.has('name') || declaredSize === 0)) {
+          declaredName = data.name;
+          declaredSize = data.size || 0;
+          declaredType = data.type || 'application/octet-stream';
+          sessionToken = data.token || sessionToken;
+          declaredSender = data.sender || declaredSender;
+          applyMetadata();
+        }
+      })
+      .catch(err => console.log('Meta fetch skipped:', err));
+
+    // =========================================================
+    // DOWNLOAD LOGIC (Pixel -> Apple)
+    // =========================================================
+    let isTransferring = false;
+    const LARGE_MEDIA_THRESHOLD = 100 * 1024 * 1024; // 100 MB (keep Photos/Videos direct-share under RAM limit)
+    const LARGE_DOC_THRESHOLD = 25 * 1024 * 1024;    // 25 MB (PDFs/ZIPs save straight to Files via Safari)
+
+    let progressPollTimer = null;
+
+    function fireHiddenDownload(directUrl) {
+      // Trigger native Safari disk download via <a download> without navigating away from this progress page
+      const link = document.createElement('a');
+      link.href = directUrl;
+      link.download = declaredName;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function startProgressPolling(token) {
+      if (progressPollTimer) clearInterval(progressPollTimer);
+      progressPollTimer = setInterval(async () => {
+        try {
+          const res = await fetch(`/progress?token=${encodeURIComponent(token)}`, { cache: 'no-store' });
+          if (!res.ok) return;
+          const p = await res.json();
+          const total = p.totalBytes || declaredSize || 0;
+          const sent = p.bytesSent || 0;
+          if (total > 0 && sent > 0) {
+            const pct = Math.min(100, Math.round((sent / total) * 100));
+            progressFill.style.width = pct + '%';
+            percentIndicator.innerText = pct + '%';
+            const speed = (p.speedMbps || 0).toFixed(1);
+            speedIndicator.innerText = `${speed} MB/s (${formatBytes(sent)} / ${formatBytes(total)})`;
+            statusText.innerText = 'Downloading to Files';
+            btnAccept.innerText = `Downloading (${pct}%)...`;
+          }
+          if (p.done) {
+            clearInterval(progressPollTimer);
+            progressPollTimer = null;
+            progressFill.style.width = '100%';
+            percentIndicator.innerText = '100%';
+            speedIndicator.innerText = `${formatBytes(total)} saved to Files`;
+            statusText.innerText = 'Download Complete';
+            btnAccept.style.backgroundColor = 'var(--accent-green)';
+            btnAccept.innerText = '✓ Saved to Files (Downloads)';
+            summaryElem.innerText = 'Open Apple Files → Downloads to view your file';
+          }
+        } catch (_) {}
+      }, 250);
+    }
+
+    function triggerDirectDiskDownload(baseUrl) {
+      const directUrl = baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'download=1';
+      statusText.innerText = 'Starting Safari Download';
+      btnDecline.style.display = 'none';
+      btnAccept.classList.add('btn-single');
+      btnAccept.style.backgroundColor = 'var(--accent-blue)';
+      btnAccept.disabled = false;
+      btnAccept.innerText = 'Tap Download if Prompt Didn’t Open';
+      btnAccept.onclick = () => fireHiddenDownload(directUrl);
+
+      progressContainer.style.display = 'block';
+      progressFill.style.width = '0%';
+      percentIndicator.innerText = '0%';
+      speedIndicator.innerText = 'Waiting for Safari [Download]...';
+      summaryElem.innerText = 'Tap "Download" in Safari popup to save straight to Files';
+
+      fireHiddenDownload(directUrl);
+      startProgressPolling(sessionToken);
+    }
+
+    function startTransfer() {
+      if (isTransferring) return;
+      isTransferring = true;
+
+      const downloadUrl = `/stream?token=${encodeURIComponent(sessionToken)}`;
+      const isMedia = declaredType.startsWith('image/') || declaredType.startsWith('video/');
+      const shouldStreamToDisk = (declaredSize > LARGE_MEDIA_THRESHOLD) || (!isMedia && declaredSize > LARGE_DOC_THRESHOLD);
+
+      if (shouldStreamToDisk) {
+        // Bypass WebKit JS heap / Blob IPC completely so huge PDFs/videos never trigger WebKit Jetsam crash
+        triggerDirectDiskDownload(downloadUrl);
+        return;
+      }
+
+      runMemoryFetchTransfer(downloadUrl);
+    }
+
+    async function runMemoryFetchTransfer(downloadUrl) {
+      btnAccept.disabled = true;
+      btnDecline.style.display = 'none';
+      btnAccept.classList.add('btn-single');
+      btnAccept.innerText = 'Receiving...';
+      progressContainer.style.display = 'block';
+      statusText.innerText = 'Streaming File';
+
+      try {
+        const response = await fetch(downloadUrl);
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}`);
+        }
+
+        const contentLength = declaredSize || parseInt(response.headers.get('Content-Length') || '0', 10);
+        if (contentLength > LARGE_MEDIA_THRESHOLD) {
+          // Size wasn't known beforehand; abort in-memory buffering and hand off to Safari native disk download
+          try { await response.body.cancel(); } catch (_) {}
+          progressContainer.style.display = 'none';
+          triggerDirectDiskDownload(downloadUrl);
+          return;
+        }
+
+        const reader = response.body.getReader();
+
+        let receivedLength = 0;
+        const chunks = [];
+        let lastSpeedCheck = performance.now();
+        let lastBytes = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          chunks.push(value);
+          receivedLength += value.length;
+
+          const now = performance.now();
+          if (contentLength > 0) {
+            const percent = Math.min(100, Math.round((receivedLength / contentLength) * 100));
+            progressFill.style.width = percent + '%';
+            percentIndicator.innerText = percent + '%';
+          }
+
+          if (now - lastSpeedCheck > 200) {
+            const timeDelta = (now - lastSpeedCheck) / 1000;
+            const bytesDelta = receivedLength - lastBytes;
+            const speedMbps = (bytesDelta / (1024 * 1024) / timeDelta).toFixed(1);
+            speedIndicator.innerText = `${speedMbps} MB/s`;
+            lastSpeedCheck = now;
+            lastBytes = receivedLength;
+          }
+        }
+
+        const receivedBlob = new Blob(chunks, { type: declaredType });
+        chunks.length = 0;
+        onTransferComplete(receivedBlob);
+      } catch (err) {
+        console.warn('In-memory fetch fallback:', err);
+        statusText.innerText = 'Ready for Direct Download';
+        btnAccept.disabled = false;
+        btnAccept.innerText = 'Download via Safari';
+        btnAccept.onclick = () => triggerDirectDiskDownload(downloadUrl);
+      }
+    }
+
+    function simulateTransfer() {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.floor(Math.random() * 15) + 12;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+          progressFill.style.width = '100%';
+          percentIndicator.innerText = '100%';
+          speedIndicator.innerText = 'Done';
+          onTransferComplete(new Blob(['PixelBump Demo Content'], { type: 'text/plain' }));
+        } else {
+          progressFill.style.width = progress + '%';
+          percentIndicator.innerText = progress + '%';
+          speedIndicator.innerText = (Math.random() * 15 + 48).toFixed(1) + ' MB/s';
+        }
+      }, 120);
+    }
+
+    async function onTransferComplete(blob) {
+      statusText.innerText = 'Transfer Complete';
+      isTransferring = false;
+      const objectUrl = URL.createObjectURL(blob);
+
+      if (declaredType.startsWith('image/')) {
+        imgPreview.src = objectUrl;
+        imgPreview.style.display = 'block';
+        genericPreview.style.display = 'none';
+      }
+
+      btnAccept.innerText = 'Save to Photos / Files';
+      btnAccept.style.backgroundColor = 'var(--accent-green)';
+      btnAccept.disabled = false;
+      btnAccept.onclick = () => saveFile(blob, objectUrl);
+
+      saveFile(blob, objectUrl);
+    }
+
+    async function saveFile(blob, objectUrl) {
+      const file = new File([blob], declaredName, { type: declaredType });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: declaredName });
+          btnAccept.innerText = '✓ Saved Successfully';
+          return;
+        } catch (shareErr) {
+          if (shareErr.name === 'AbortError') return;
+        }
+      }
+
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = declaredName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      btnAccept.innerText = '✓ Downloaded';
+    }
+
+    function handleDecline() {
+      downloadCard.style.opacity = '0.5';
+      statusText.innerText = 'Declined';
+      btnAccept.disabled = true;
+      btnDecline.disabled = true;
+    }
+
+    // =========================================================
+    // UPLOAD LOGIC (Apple -> Pixel)
+    // =========================================================
+    let selectedUploadFiles = [];
+    let isUploading = false;
+
+    const uploadDropZone = document.getElementById('upload-drop-zone');
+    const uploadFileListBox = document.getElementById('upload-file-list-box');
+    const uploadSummaryHeader = document.getElementById('upload-summary-header');
+    const uploadFileRows = document.getElementById('upload-file-rows');
+    const uploadProgressContainer = document.getElementById('upload-progress-container');
+    const uploadProgressFill = document.getElementById('upload-progress-fill');
+    const uploadSpeedIndicator = document.getElementById('upload-speed-indicator');
+    const uploadPercentIndicator = document.getElementById('upload-percent-indicator');
+    const uploadStatusText = document.getElementById('upload-status-text');
+    const btnSendToPixel = document.getElementById('btn-send-to-pixel');
+
+    function handleFilesChosen(fileList) {
+      if (!fileList || fileList.length === 0) return;
+      selectedUploadFiles = Array.from(fileList);
+
+      let totalSize = 0;
+      uploadFileRows.innerHTML = '';
+      selectedUploadFiles.forEach(file => {
+        totalSize += file.size;
+        const row = document.createElement('div');
+        row.className = 'file-row';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'file-row-name';
+        nameSpan.textContent = file.name;
+        const sizeSpan = document.createElement('span');
+        sizeSpan.className = 'file-row-size';
+        sizeSpan.textContent = formatBytes(file.size);
+        row.appendChild(nameSpan);
+        row.appendChild(sizeSpan);
+        uploadFileRows.appendChild(row);
+      });
+
+      uploadSummaryHeader.innerText = `${selectedUploadFiles.length} Item(s) • ${formatBytes(totalSize)}`;
+      uploadDropZone.classList.add('hidden');
+      uploadFileListBox.classList.remove('hidden');
+
+      btnSendToPixel.disabled = false;
+      btnSendToPixel.style.backgroundColor = 'var(--accent-blue)';
+      btnSendToPixel.innerText = `Send ${selectedUploadFiles.length} File${selectedUploadFiles.length > 1 ? 's' : ''} (${formatBytes(totalSize)})`;
+    }
+
+    function clearSelectedUploadFiles() {
+      if (isUploading) return;
+      selectedUploadFiles = [];
+      document.getElementById('apple-file-input').value = '';
+      uploadDropZone.classList.remove('hidden');
+      uploadFileListBox.classList.add('hidden');
+      uploadProgressContainer.style.display = 'none';
+      uploadProgressFill.style.width = '0%';
+      uploadStatusText.innerText = 'Pixel Drop Box Ready';
+      btnSendToPixel.disabled = true;
+      btnSendToPixel.style.backgroundColor = '';
+      btnSendToPixel.innerText = 'Select Files Above to Send';
+      btnSendToPixel.onclick = startUploadToPixel;
+    }
+
+    async function startUploadToPixel() {
+      if (isUploading || selectedUploadFiles.length === 0) return;
+      isUploading = true;
+
+      const totalSize = selectedUploadFiles.reduce((acc, f) => acc + f.size, 0);
+      btnSendToPixel.disabled = true;
+      btnSendToPixel.innerText = 'Waiting for Pixel Accept...';
+      uploadStatusText.innerText = 'Requesting Pixel Approval';
+      uploadProgressContainer.style.display = 'block';
+      uploadSpeedIndicator.innerText = 'Prompting Pixel...';
+      uploadPercentIndicator.innerText = '0%';
+
+      try {
+        // Step 1: Request approval from Pixel 6a
+        const askRes = await fetch('/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sender: detectAppleDevice(),
+            totalSize: totalSize,
+            files: selectedUploadFiles.map(f => ({
+              name: f.name,
+              size: f.size,
+              type: f.type || 'application/octet-stream'
+            }))
+          })
+        });
+
+        if (!askRes.ok) throw new Error('Approval request failed');
+        const askJson = await askRes.json();
+        if (!askJson.accepted) {
+          uploadStatusText.innerText = 'Declined by Pixel';
+          uploadSpeedIndicator.innerText = 'Transfer declined';
+          btnSendToPixel.innerText = 'Declined • Try Again';
+          btnSendToPixel.disabled = false;
+          isUploading = false;
+          return;
+        }
+
+        // Step 2: Stream each file sequentially via XHR for reliable upload progress
+        uploadStatusText.innerText = 'Sending to Pixel';
+        btnSendToPixel.innerText = 'Sending...';
+
+        let uploadedBeforeCurrent = 0;
+        let lastTime = performance.now();
+        let lastLoadedTotal = 0;
+
+        for (let i = 0; i < selectedUploadFiles.length; i++) {
+          const file = selectedUploadFiles[i];
+          await uploadSingleFileXhr(file, (loadedInFile) => {
+            const totalLoaded = uploadedBeforeCurrent + loadedInFile;
+            const pct = totalSize > 0 ? Math.min(100, Math.round((totalLoaded / totalSize) * 100)) : 100;
+            uploadProgressFill.style.width = pct + '%';
+            uploadPercentIndicator.innerText = pct + '%';
+
+            const now = performance.now();
+            if (now - lastTime > 200) {
+              const dt = (now - lastTime) / 1000;
+              const dbytes = totalLoaded - lastLoadedTotal;
+              const mbps = Math.max(0, dbytes / (1024 * 1024) / dt).toFixed(1);
+              uploadSpeedIndicator.innerText = `${mbps} MB/s (${i + 1}/${selectedUploadFiles.length})`;
+              lastTime = now;
+              lastLoadedTotal = totalLoaded;
+            }
+          });
+          uploadedBeforeCurrent += file.size;
+        }
+
+        uploadProgressFill.style.width = '100%';
+        uploadPercentIndicator.innerText = '100%';
+        uploadSpeedIndicator.innerText = `${formatBytes(totalSize)} sent`;
+        uploadStatusText.innerText = 'Delivered to Pixel!';
+        btnSendToPixel.style.backgroundColor = 'var(--accent-green)';
+        btnSendToPixel.innerText = '✓ Sent! Tap to Send More';
+        btnSendToPixel.disabled = false;
+        isUploading = false;
+        btnSendToPixel.onclick = () => {
+          btnSendToPixel.onclick = startUploadToPixel;
+          clearSelectedUploadFiles();
+        };
+      } catch (err) {
+        console.error('Upload error:', err);
+        uploadStatusText.innerText = 'Connection Error';
+        uploadSpeedIndicator.innerText = err.message || 'Failed';
+        btnSendToPixel.innerText = 'Retry Send';
+        btnSendToPixel.disabled = false;
+        isUploading = false;
+      }
+    }
+
+    function uploadSingleFileXhr(file, onProgress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const url = `/upload?name=${encodeURIComponent(file.name)}&size=${file.size}&type=${encodeURIComponent(file.type || 'application/octet-stream')}`;
+        xhr.open('POST', url, true);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) onProgress(e.loaded);
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            onProgress(file.size);
+            resolve();
+          } else {
+            reject(new Error(`Server error ${xhr.status}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Network error while uploading'));
+        xhr.send(file);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<host-apdu-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/hce_service_desc"
+    android:requireDeviceUnlock="false">
+    <aid-group
+        android:category="other"
+        android:description="@string/aid_group_desc">
+        <!-- NFC Forum Type 4 Tag v2.0 Application Identifier -->
+        <aid-filter android:name="D2760000850101" />
+        <!-- NFC Forum Type 4 Tag v1.0 Application Identifier -->
+        <aid-filter android:name="D2760000850100" />
+    </aid-group>
+</host-apdu-service>
